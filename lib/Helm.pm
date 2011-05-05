@@ -18,7 +18,7 @@ use Parallel::ForkManager;
 use DateTime;
 use IO::File;
 
-our $VERSION = 0.1;
+our $VERSION = 0.3;
 our $DEBUG = 0;
 our $DEBUG_LOG;
 our $DEBUG_LOG_PID;
@@ -27,26 +27,27 @@ enum LOG_LEVEL => qw(debug info warn error);
 enum LOCK_TYPE => qw(none local remote both);
 
 has task                 => (is => 'ro', writer => '_task',           required => 1);
-has config_uri           => (is => 'ro', writer => '_config_uri',     isa      => 'Str');
+has user                 => (is => 'ro', writer => '_user',           isa      => 'Maybe[Str]');
+has config_uri           => (is => 'ro', writer => '_config_uri',     isa      => 'Maybe[Str]');
 has config               => (is => 'ro', writer => '_config',         isa      => 'Helm::Conf');
 has lock_type            => (is => 'ro', writer => '_lock_type',      isa      => 'LOCK_TYPE');
-has sleep                => (is => 'ro', writer => '_sleep',          isa      => 'Num');
+has sleep                => (is => 'ro', writer => '_sleep',          isa      => 'Maybe[Num]');
 has current_server       => (is => 'ro', writer => '_current_server', isa      => 'Helm::Server');
 has current_ssh          => (is => 'ro', writer => '_current_ssh',    isa      => 'Net::OpenSSH');
 has log                  => (is => 'ro', writer => '_log',            isa      => 'Helm::Log');
-has default_port         => (is => 'ro', writer => '_port',           isa      => 'Int');
-has timeout              => (is => 'ro', writer => '_timeout',        isa      => 'Int');
-has sudo                 => (is => 'rw', isa    => 'Str',             default  => '');
-has extra_options        => (is => 'ro', isa    => 'HashRef',         default  => sub { {} });
-has extra_args           => (is => 'ro', isa    => 'ArrayRef',        default  => sub { [] });
-has parallel             => (is => 'ro', isa    => 'Bool|Undef',      default  => 0);
-has parallel_max         => (is => 'ro', isa    => 'Int|Undef',       default  => 100);
-has continue_with_errors => (is => 'ro', isa    => 'Bool|Undef',      default  => 0);
-has local_lock_handle => (is => 'ro', writer => '_local_lock_handle', isa => 'FileHandle|Undef');
+has default_port         => (is => 'ro', writer => '_port',           isa      => 'Maybe[Int]');
+has timeout              => (is => 'ro', writer => '_timeout',        isa      => 'Maybe[Int]');
+has sudo                 => (is => 'rw', isa    => 'Maybe[Str]',      default  => '');
+has extra_options        => (is => 'ro', isa    => 'Maybe[HashRef]',  default  => sub { {} });
+has extra_args           => (is => 'ro', isa    => 'Maybe[ArrayRef]', default  => sub { [] });
+has parallel             => (is => 'ro', isa    => 'Maybe[Bool]',     default  => 0);
+has parallel_max         => (is => 'ro', isa    => 'Maybe[Int]',      default  => 100);
+has continue_with_errors => (is => 'ro', isa    => 'Maybe[Bool]',     default  => 0);
+has local_lock_handle => (is => 'ro', writer => '_local_lock_handle', isa => 'Maybe[FileHandle]');
 has servers    => (
     is      => 'ro',
     writer  => '_servers',
-    isa     => 'ArrayRef',
+    isa     => 'Maybe[ArrayRef]',
     default => sub { [] },
 );
 has roles => (
@@ -58,7 +59,7 @@ has roles => (
 has exclude_servers    => (
     is      => 'ro',
     writer  => '_exclude_servers',
-    isa     => 'ArrayRef',
+    isa     => 'Maybe[ArrayRef]',
     default => sub { [] },
 );
 has exclude_roles => (
@@ -75,7 +76,7 @@ has log_level => (
 );
 has _dont_exit => (
     is      => 'rw',
-    isa     => 'Bool|Undef',
+    isa     => 'Maybe[Bool]',
     default => 0
 );
 
@@ -232,7 +233,9 @@ sub steer {
     eval "require $task_class";
 
     if( $@ ) {
-        if( $@ =~ /Can't locate \S+.pm/ ) {
+        my $task_class_file = $task_class;
+        $task_class_file =~ s/::/\//g;
+        if( $@ =~ /Can't locate \Q$task_class_file\E\.pm/ ) {
             $self->die("Can not find module $task_class for task $task");
         } else {
             $self->die("Could not load module $task_class for task $task");
@@ -305,8 +308,13 @@ sub steer {
             }
         }
 
-        my $ssh = Net::OpenSSH->new($server->name, %ssh_args);
-        $ssh->error && $self->die("Can't ssh to $server: " . $ssh->error);
+        my $connection_name = $server->name;
+        my $user = $self->user;
+        $connection_name = $user . '@' . $connection_name if $user;
+
+        my $ssh = Net::OpenSSH->new($connection_name, %ssh_args);
+        $ssh->error
+          && $self->die("Can't ssh to $server" . ($user ? " as user $user" : '') . ": " . $ssh->error);
         $self->_current_ssh($ssh);
 
         # get a lock on the server if we need to
@@ -365,7 +373,9 @@ sub load_configuration {
     eval "require $loader_class";
 
     if( $@ ) {
-        if( $@ =~ /Can't locate \S+.pm/ ) {
+        my $loader_class_file = $loader_class;
+        $loader_class_file =~ s/::/\//g;
+        if( $@ =~ /Can't locate \Q$loader_class_file\E\.pm/ ) {
             $self->die("Can not find module $loader_class for configuration type $scheme");
         } else {
             $self->die("Could not load module $loader_class for configuration type $scheme: $@");

@@ -51,6 +51,14 @@ OPTIONS
     remaining arguments are passed to the task that was invoked. These
     global options are:
 
+    --user
+        By default, helm assumes you're running the comands as the current
+        local. This works really well with SSH keys set up so that you don't
+        have to try and type in your password on lots of login attempts.
+        However, if you want to change the user, this option allows for
+        that. You will however be prompted for a password if you don't have
+        SSH keys properly set up.
+
     --servers
         Specifically list out the hostnames of the servers to send the task
         to. These can either be full hostnames (or an unambiguous
@@ -330,9 +338,9 @@ THE .helmrc FILE
         --load Helm::Log::CompanyYammer
         --load Company::CustomHelmTasks
 
-    "helm" looks in your home directory or the current directory for the
-    .helmrc. You can specify another location with the "HELMRC" environment
-    variable.
+    "helm" looks for the rc file first in the current directory and then in
+    your home directory. You can specify another location with the "HELMRC"
+    environment variable.
 
     If --no-rc-file is specified on the command line, the .helmrc file is
     ignored.

@@ -13,7 +13,7 @@ name: helm
 provides:
   Helm:
     file: lib/Helm.pm
-    version: 0.1
+    version: 0.3
   Helm::Conf:
     file: lib/Helm/Conf.pm
   Helm::Conf::Loader:
@@ -49,33 +49,33 @@ provides:
   Helm::Task::unlock:
     file: lib/Helm/Task/unlock.pm
 recommends:
-  AnyEvent::IRC::Client: ''
-  Config::ApacheFormat: 1.2
-  Email::Sender: 0.102370
-  Email::Simple: 2.100
-  Email::Simple::Creator: 1.424
-  Email::Valid: 0.184
+  AnyEvent::IRC::Client: 0
+  Config::ApacheFormat: 0
+  Email::Sender: 0
+  Email::Simple: 0
+  Email::Simple::Creator: 0
+  Email::Valid: 0
 requires:
-  AnyEvent: 5.271
+  AnyEvent: 0
   Carp: 0
-  Cwd: 3.33
-  Data::UUID: 1.217
-  DateTime: 0.63
+  Cwd: 0
+  Data::UUID: 0
+  DateTime: 0
   Fcntl: 0
-  File::Basename: 2.77
-  File::HomeDir: 0.93
-  File::Spec::Functions: 3.33
-  Getopt::Long: 2.38
-  IO::File: 1.14
-  IO::Pipe: 1.13
+  File::Basename: 0
+  File::HomeDir: 0
+  File::Spec::Functions: 0
+  Getopt::Long: 0
+  IO::File: 0
+  IO::Pipe: 0
   Moose: 1.14
-  Net::OpenSSH: 0.49
-  Parallel::ForkManager: v0.7.7
-  Pod::Usage: 1.36
-  Term::ANSIColor: 3.00
-  Try::Tiny: 0.06
-  URI: 1.55
+  Net::OpenSSH: 0
+  Parallel::ForkManager: 0
+  Pod::Usage: 0
+  Term::ANSIColor: 0
+  Try::Tiny: 0
+  URI: 0
   perl: v5.8.0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.2
+version: 0.3
